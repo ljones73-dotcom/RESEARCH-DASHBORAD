@@ -614,8 +614,13 @@
     </div>
 
     <script>
-        // --- INITIAL STATE ---
-        const defaultData = {
+        // ====== AHA STACK IMPLEMENTATION ======
+        // A (Attributes): Single source of truth for all application state
+        // H (Handlers): Pure functions that transform state based on user actions
+        // A (Actions): Entry points that dispatch state changes
+
+        // --- ATTRIBUTES (State) ---
+        const attributes = {
             mission: {
                 focus: "Investigating the friction points between rapid LLM prototyping and long-term maintainability in UI development.",
                 question: "How can we compress the UI creation loop without sacrificing structural integrity?"
@@ -641,30 +646,116 @@
             ]
         };
 
-        const STORAGE_KEY = 'kineticData';
-        let draggedNodeInfo = null; // { category, index }
+        // UI state (audit mode, modal visibility, etc.)
+        let uiState = {
+            auditMode: false,
+            modalActive: false,
+            draggedNodeInfo: null
+        };
 
-        function loadData() {
+        const STORAGE_KEY = 'kineticData';
+
+        // --- PERSISTENT STORAGE UTILITIES ---
+        function loadAttributesFromStorage() {
             const stored = localStorage.getItem(STORAGE_KEY);
             if (stored) {
                 try {
-                    return JSON.parse(stored);
+                    const parsed = JSON.parse(stored);
+                    return parsed;
                 } catch (e) {
                     console.error("Failed to parse localStorage data, falling back to default.", e);
-                    return defaultData;
+                    return attributes;
                 }
             }
-            return defaultData;
+            return attributes;
         }
 
-        function saveData(dataObj) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(dataObj));
-            renderDashboard(dataObj);
+        function persistAttributes() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(attributes));
         }
 
-        // Status Logic
-        const statusFlow = ['BACKLOG', 'IN-AUDIT', 'VERIFIED'];
+        // --- HANDLERS (Pure state transformations) ---
+        const handlers = {
+            // Reorder items within a category
+            reorderItem(category, fromIndex, toIndex) {
+                if (!attributes[category]) return;
+                const item = attributes[category].splice(fromIndex, 1)[0];
+                const adjustedIndex = (fromIndex < toIndex) ? toIndex - 1 : toIndex;
+                attributes[category].splice(adjustedIndex, 0, item);
+                persistAttributes();
+            },
 
+            // Toggle status of an item
+            toggleItemStatus(category, index) {
+                if (!attributes[category]?.[index]) return;
+                const statusFlow = ['BACKLOG', 'IN-AUDIT', 'VERIFIED'];
+                const currentStatus = attributes[category][index].status || 'BACKLOG';
+                const nextIndex = (statusFlow.indexOf(currentStatus.toUpperCase()) + 1) % statusFlow.length;
+                attributes[category][index].status = statusFlow[nextIndex];
+                persistAttributes();
+            },
+
+            // Bulk replace all data (for JSON editor)
+            replaceAllData(newData) {
+                Object.assign(attributes, newData);
+                persistAttributes();
+            },
+
+            // Update UI state
+            setAuditMode(isActive) {
+                uiState.auditMode = isActive;
+            },
+
+            setModalActive(isActive) {
+                uiState.modalActive = isActive;
+            },
+
+            setDraggedNode(dragInfo) {
+                uiState.draggedNodeInfo = dragInfo;
+            }
+        };
+
+        // --- ACTIONS (User interaction triggers) ---
+        const actions = {
+            // Reorder handler for drag and drop
+            handleItemReordered(category, fromIndex, toIndex) {
+                handlers.reorderItem(category, fromIndex, toIndex);
+                renderDashboard();
+            },
+
+            // Status toggle handler
+            handleItemStatusToggled(category, index) {
+                handlers.toggleItemStatus(category, index);
+                renderDashboard();
+            },
+
+            // JSON data commitment
+            handleDataCommitted(newData) {
+                handlers.replaceAllData(newData);
+                renderDashboard();
+            },
+
+            // UI state changes
+            handleAuditToggled() {
+                const newState = !uiState.auditMode;
+                handlers.setAuditMode(newState);
+                updateAuditButtonUI(newState);
+            },
+
+            handleModalToggled(isOpen) {
+                handlers.setModalActive(isOpen);
+            },
+
+            handleDragStarted(category, index) {
+                handlers.setDraggedNode({ category, index });
+            },
+
+            handleDragEnded() {
+                handlers.setDraggedNode(null);
+            }
+        };
+
+        // --- RENDERING & UI UTILITIES ---
         function getStatusClass(statusStr) {
             if (!statusStr) return 'status-backlog';
             const s = statusStr.toUpperCase();
@@ -673,24 +764,13 @@
             return 'status-backlog';
         }
 
-        function toggleStatus(category, index) {
-            const data = loadData();
-            const currentStatus = data[category][index].status || 'BACKLOG';
-            let nextIndex = statusFlow.indexOf(currentStatus.toUpperCase()) + 1;
-            if (nextIndex >= statusFlow.length) nextIndex = 0;
-
-            data[category][index].status = statusFlow[nextIndex];
-            saveData(data);
-        }
-
-        function updateVelocity(data) {
+        function updateVelocity() {
             let totalTasks = 0;
             let verifiedTasks = 0;
 
-            // Track standard items with statuses as 'tasks'
             const combinator = [
-                ...(data.library || []),
-                ...(data.experiments || [])
+                ...(attributes.library || []),
+                ...(attributes.experiments || [])
             ];
 
             combinator.forEach(item => {
@@ -702,7 +782,6 @@
                 }
             });
 
-            // Avoid div by zero
             if (totalTasks === 0) totalTasks = 1;
 
             const pct = Math.round((verifiedTasks / totalTasks) * 100);
@@ -710,22 +789,33 @@
             document.getElementById('velocity-label').textContent = `${pct}% Verified (${verifiedTasks}/${totalTasks})`;
         }
 
+        function updateAuditButtonUI(isActive) {
+            const auditBtn = document.getElementById('audit-toggle');
+            if (isActive) {
+                document.body.classList.add('audit-mode');
+                auditBtn.textContent = '⚲ Optic Audit: Active';
+                auditBtn.classList.add('btn-active');
+            } else {
+                document.body.classList.remove('audit-mode');
+                auditBtn.textContent = '⚲ Optic Audit: Off';
+                auditBtn.classList.remove('btn-active');
+            }
+        }
+
         // --- DRAG AND DROP HANDLERS ---
         function handleDragStart(e, category, index) {
-            draggedNodeInfo = { category, index };
+            actions.handleDragStarted(category, index);
             e.dataTransfer.effectAllowed = 'move';
-            // Slight delay so the ghost rendering catches the element before class is applied
             setTimeout(() => {
                 e.target.classList.add('kinetic-ghost');
             }, 0);
         }
 
         function handleDragOver(e) {
-            e.preventDefault(); // Necessary to allow dropping
+            e.preventDefault();
             const listContainer = e.currentTarget;
             e.dataTransfer.dropEffect = 'move';
 
-            // Highlight the drop target based on mouse position relative to center of element
             const items = [...listContainer.querySelectorAll('.draggable:not(.kinetic-ghost)')];
             const mouseY = e.clientY;
 
@@ -744,10 +834,9 @@
         }
 
         function handleDragEnd(e) {
+            actions.handleDragEnded();
             e.target.classList.remove('kinetic-ghost');
-            // Cleanup any remaining visual indicators
             document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
-            draggedNodeInfo = null;
         }
 
         function handleDrop(e, category) {
@@ -757,26 +846,20 @@
             const listContainer = e.currentTarget;
             document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
 
-            if (!draggedNodeInfo || draggedNodeInfo.category !== category) return; // Prevent cross-category drops for now
+            if (!uiState.draggedNodeInfo || uiState.draggedNodeInfo.category !== category) return;
 
-            const droppedElementIndex = draggedNodeInfo.index;
+            const droppedElementIndex = uiState.draggedNodeInfo.index;
             const dropTarget = getDragAfterElement(listContainer, e.clientY);
 
-            let data = loadData();
-            const sourceArray = data[category];
-            const draggedItem = sourceArray.splice(droppedElementIndex, 1)[0];
-
-            // If dropTarget exists, insert before it. Else append to end.
+            let toIndex;
             if (dropTarget) {
                 const targetIndex = parseInt(dropTarget.getAttribute('data-index'), 10);
-                // Adjust index if we drag top to bottom vs bottom to top to ensure accurate placement
-                const offsetTarget = (droppedElementIndex < targetIndex) ? targetIndex - 1 : targetIndex;
-                sourceArray.splice(offsetTarget, 0, draggedItem);
+                toIndex = (droppedElementIndex < targetIndex) ? targetIndex - 1 : targetIndex;
             } else {
-                sourceArray.push(draggedItem);
+                toIndex = attributes[category].length - 1;
             }
 
-            saveData(data);
+            actions.handleItemReordered(category, droppedElementIndex, toIndex);
         }
 
         function getDragAfterElement(container, y) {
@@ -794,15 +877,15 @@
 
 
         // --- RENDER LOGIC ---
-        function renderDashboard(data) {
+        function renderDashboard() {
             // Mission
-            document.getElementById('render-focus').textContent = data.mission?.focus || "N/A";
-            document.getElementById('render-question').textContent = data.mission?.question || "N/A";
+            document.getElementById('render-focus').textContent = attributes.mission?.focus || "N/A";
+            document.getElementById('render-question').textContent = attributes.mission?.question || "N/A";
 
             // Plan
             const planContainer = document.getElementById('render-plan');
             planContainer.innerHTML = '';
-            (data.plan || []).forEach((w, i) => {
+            (attributes.plan || []).forEach((w, i) => {
                 const el = document.createElement('div');
                 el.className = 'plan-item draggable';
                 el.draggable = true;
@@ -818,7 +901,6 @@
                 el.addEventListener('dragend', handleDragEnd);
                 planContainer.appendChild(el);
             });
-            // Attach drop listeners to container
             planContainer.addEventListener('dragover', handleDragOver);
             planContainer.addEventListener('dragleave', handleDragLeave);
             planContainer.addEventListener('drop', (e) => handleDrop(e, 'plan'));
@@ -826,7 +908,7 @@
             // Library
             const libContainer = document.getElementById('render-library');
             libContainer.innerHTML = '';
-            (data.library || []).forEach((item, i) => {
+            (attributes.library || []).forEach((item, i) => {
                 const statusStr = item.status || 'BACKLOG';
                 libContainer.innerHTML += `
                     <li class="library-item">
@@ -835,7 +917,7 @@
                             <div style="margin-top: 0.5rem; color: #555;">${item.takeaway}</div>
                         </div>
                         <div class="library-meta">
-                            <span class="status-pill ${getStatusClass(statusStr)}" onclick="toggleStatus('library', ${i})">${statusStr}</span>
+                            <span class="status-pill ${getStatusClass(statusStr)}" onclick="actions.handleItemStatusToggled('library', ${i})">${statusStr}</span>
                         </div>
                     </li>
                 `;
@@ -844,7 +926,7 @@
             // Prompts
             const promptContainer = document.getElementById('render-prompts');
             promptContainer.innerHTML = '';
-            (data.prompts || []).forEach(p => {
+            (attributes.prompts || []).forEach(p => {
                 promptContainer.innerHTML += `
                     <div class="prompt-entry">
                         <span class="prompt-meta">${p.model}</span>
@@ -857,7 +939,7 @@
             // Experiments
             const expContainer = document.getElementById('render-experiments');
             expContainer.innerHTML = '';
-            (data.experiments || []).forEach((e, i) => {
+            (attributes.experiments || []).forEach((e, i) => {
                 const statusStr = e.status || 'BACKLOG';
                 const el = document.createElement('div');
                 el.className = 'experiment-card draggable';
@@ -872,7 +954,7 @@
                             <span class="log-label" style="font-size: 0.75rem; margin:0; border:none; display:flex; align-items:center; gap:0.5rem;">
                               <span class="drag-handle">≡</span> Input
                             </span>
-                            <span class="status-pill ${getStatusClass(statusStr)}" onclick="toggleStatus('experiments', ${i})">${statusStr}</span>
+                            <span class="status-pill ${getStatusClass(statusStr)}" onclick="actions.handleItemStatusToggled('experiments', ${i})">${statusStr}</span>
                         </div>
                         ${e.input}
                         <span class="log-label" style="margin-top:0.75rem;">Pruning Observation</span>
@@ -890,25 +972,22 @@
             expContainer.addEventListener('drop', (e) => handleDrop(e, 'experiments'));
 
             // Update Velocity
-            updateVelocity(data);
+            updateVelocity();
         }
 
         // --- EVENT LISTENERS ---
         document.addEventListener('DOMContentLoaded', () => {
+            // Load persisted data from localStorage into attributes
+            const storedData = loadAttributesFromStorage();
+            Object.assign(attributes, storedData);
+
             // Initial Render
-            const appData = loadData();
-            renderDashboard(appData);
+            renderDashboard();
 
             // Audit Toggle
             const auditBtn = document.getElementById('audit-toggle');
             auditBtn.addEventListener('click', () => {
-                const isActive = document.body.classList.toggle('audit-mode');
-                auditBtn.textContent = isActive ? '⚲ Optic Audit: Active' : '⚲ Optic Audit: Off';
-                if (isActive) {
-                    auditBtn.classList.add('btn-active');
-                } else {
-                    auditBtn.classList.remove('btn-active');
-                }
+                actions.handleAuditToggled();
             });
 
             // Modal Logic
@@ -916,11 +995,13 @@
             const editor = document.getElementById('json-editor');
 
             document.getElementById('sys-data-btn').addEventListener('click', () => {
-                editor.value = JSON.stringify(loadData(), null, 2);
+                editor.value = JSON.stringify(attributes, null, 2);
+                actions.handleModalToggled(true);
                 modal.classList.add('active');
             });
 
             document.getElementById('close-modal').addEventListener('click', () => {
+                actions.handleModalToggled(false);
                 modal.classList.remove('active');
                 document.getElementById('save-status').style.display = 'none';
             });
@@ -928,7 +1009,7 @@
             document.getElementById('save-data').addEventListener('click', () => {
                 try {
                     const parsed = JSON.parse(editor.value);
-                    saveData(parsed);
+                    actions.handleDataCommitted(parsed);
                     const status = document.getElementById('save-status');
                     status.style.display = 'inline';
                     setTimeout(() => status.style.display = 'none', 2000);
@@ -940,6 +1021,7 @@
             // Close modal on click outside
             window.addEventListener('click', (e) => {
                 if (e.target === modal) {
+                    actions.handleModalToggled(false);
                     modal.classList.remove('active');
                 }
             });
