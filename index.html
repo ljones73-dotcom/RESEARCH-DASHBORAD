@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aethelgard Press: Kinetic Narratives</title>
+    <!-- Google Fonts: Meow Script for elegant headings, Special Elite for body/labels -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Meow+Script&family=Special+Elite&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            /* Palette Core - Artisan Scholar */
+            --bg-color: #F8F5EF;
+            /* Textured cream-beige base */
+            --text-color: #2C2A29;
+            /* Deep charcoal black */
+            --accent-orange: #D36135;
+            /* Earthy amber-orange */
+            --panel-bg: #FFFFFF;
+            /* Pure paper white for cards */
+            --border-color: #D6D0C4;
+            /* Soft earthy border */
+
+            /* Status Colors */
+            --status-charcoal: #3D3C3A;
+            --status-amber: #D36135;
+            --status-white: #F8F5EF;
+
+            /* Typography */
+            --font-heading: 'Meow Script', cursive;
+            --font-body: 'Special Elite', monospace;
+
+            /* Transitions */
+            --trans-speed: 0.2s;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-body);
+            line-height: 1.6;
+
+            /* Subtle paper texture effect */
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
+
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Typography Basics */
+        h1,
+        h2,
+        h3 {
+            font-family: var(--font-heading);
+            color: var(--text-color);
+            font-weight: normal;
+        }
+
+        /* Layout Grid: Sidebar + Main Feed */
+        .layout-wrapper {
+            display: flex;
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Nav Sidebar */
+        .sidebar {
+            width: 380px;
+            padding: 3rem 2rem;
+            border-right: 2px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.02);
+            z-index: 10;
+        }
+
+        .site-title {
+            font-size: 3.5rem;
+            line-height: 1.1;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid var(--text-color);
+            padding-bottom: 1rem;
+            text-align: center;
+        }
+
+        .hud-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: auto;
+        }
+
+        /* Buttons & Toggles */
+        button {
+            background: var(--panel-bg);
+            color: var(--text-color);
+            border: 2px solid var(--text-color);
+            padding: 0.75rem 1rem;
+            font-family: var(--font-body);
+            font-size: 0.9rem;
+            cursor: pointer;
+            box-shadow: 2px 2px 0 var(--text-color);
+            transition: all var(--trans-speed) ease;
+            text-align: left;
+            position: relative;
+        }
+
+        button:hover {
+            transform: translate(-1px, -1px);
+            box-shadow: 3px 3px 0 var(--text-color);
+            color: var(--accent-orange);
+        }
+
+        button:active {
+            transform: translate(2px, 2px);
+            box-shadow: 0px 0px 0 var(--text-color);
+        }
+
+        .btn-active {
+            background: var(--text-color);
+            color: var(--bg-color);
+        }
+
+        .btn-active:hover {
+            color: var(--accent-orange);
+        }
+
+        /* Mission Brief */
+        .mission-brief h2 {
+            font-size: 2.2rem;
+            border-bottom: 1px dotted var(--border-color);
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.25rem;
+        }
+
+        .mission-brief .content {
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Main Content Feed */
+        .main-feed {
+            flex: 1;
+            padding: 3rem 4rem;
+            display: flex;
+            flex-direction: column;
+            gap: 3rem;
+            max-width: 900px;
+        }
+
+        /* Section Headers with Velocity Bar */
+        .section-header {
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .section-title {
+            font-size: 3rem;
+            border-bottom: 3px double var(--text-color);
+            padding-bottom: 0.5rem;
+            color: var(--text-color);
+            letter-spacing: 2px;
+        }
+
+        .velocity-container {
+            margin-top: 1rem;
+            width: 100%;
+            height: 8px;
+            background: var(--border-color);
+            border: 1px solid var(--text-color);
+            position: relative;
+        }
+
+        .velocity-fill {
+            height: 100%;
+            background: var(--accent-orange);
+            width: 0%;
+            transition: width 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        .velocity-label {
+            position: absolute;
+            right: 0;
+            top: -20px;
+            font-size: 0.75rem;
+            color: var(--text-color);
+            text-transform: uppercase;
+        }
+
+        /* Feed Cards */
+        .card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 4px 4px 0 rgba(44, 42, 41, 0.05);
+        }
+
+        /* Drag & Drop Ghosting */
+        .draggable {
+            cursor: grab;
+        }
+
+        .draggable:active {
+            cursor: grabbing;
+        }
+
+        .kinetic-ghost {
+            opacity: 0.5;
+            filter: blur(2px);
+            border: 1px dashed var(--accent-orange) !important;
+            background: var(--bg-color) !important;
+        }
+
+        .drag-over {
+            border-top: 2px solid var(--accent-orange) !important;
+            padding-top: 1rem !important;
+            /* give visual space for drop insertion */
+        }
+
+        /* The Master Plan */
+        .plan-item {
+            display: flex;
+            gap: 1.5rem;
+            align-items: flex-start;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .plan-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .week-num {
+            font-family: var(--font-heading);
+            font-size: 2.5rem;
+            color: var(--accent-orange);
+            min-width: 60px;
+            line-height: 1;
+            /* Draggable handle indicator */
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .drag-handle {
+            font-size: 1rem;
+            color: var(--border-color);
+            cursor: grab;
+            font-family: var(--font-body);
+        }
+
+        .plan-content {
+            flex-grow: 1;
+        }
+
+        .plan-content strong {
+            display: block;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .success-indicator {
+            font-size: 0.9rem;
+            color: #666;
+            font-style: italic;
+        }
+
+        /* Status Pills */
+        .status-pill {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            cursor: pointer;
+            border: 1px solid transparent;
+            font-family: var(--font-body);
+            transition: all var(--trans-speed);
+            box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        .status-pill:hover {
+            transform: translateY(-1px);
+            box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        .status-backlog {
+            background: var(--status-charcoal);
+            color: var(--bg-color);
+        }
+
+        .status-in-audit {
+            background: var(--status-amber);
+            color: var(--bg-color);
+        }
+
+        .status-verified {
+            background: var(--status-white);
+            color: var(--text-color);
+            border-color: var(--text-color);
+        }
+
+        /* Reading Library */
+        .library-list {
+            list-style: none;
+        }
+
+        .library-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            border-bottom: 1px dashed var(--border-color);
+        }
+
+        .library-item:last-child {
+            border-bottom: none;
+        }
+
+        .library-meta {
+            display: flex;
+            align-items: center;
+        }
+
+        a {
+            color: var(--text-color);
+            text-decoration: underline;
+            text-decoration-thickness: 1px;
+            text-decoration-color: var(--border-color);
+            text-underline-offset: 4px;
+            transition: color var(--trans-speed);
+        }
+
+        a:hover {
+            color: var(--accent-orange);
+            text-decoration-color: var(--accent-orange);
+        }
+
+        /* Prompt Log */
+        .prompt-entry {
+            border-left: 4px solid var(--border-color);
+            padding-left: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .prompt-meta {
+            font-size: 0.8rem;
+            color: var(--accent-orange);
+            margin-bottom: 0.5rem;
+            display: inline-block;
+        }
+
+        .prompt-text {
+            font-weight: bold;
+            margin-bottom: 1rem;
+            background: #F0EBE1;
+            padding: 1rem;
+            border-radius: 2px;
+        }
+
+        .prompt-shift {
+            font-size: 0.9rem;
+            color: #555;
+        }
+
+        /* Experiment Log Grid */
+        .experiment-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .experiment-card {
+            border: 1px solid var(--border-color);
+            background: var(--panel-bg);
+            padding: 1rem;
+            box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease;
+        }
+
+        .experiment-img-container {
+            width: 100%;
+            aspect-ratio: 4/3;
+            overflow: hidden;
+            background: #ECE8DE;
+            margin-bottom: 1rem;
+            border: 1px solid var(--text-color);
+        }
+
+        .experiment-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: filter 0.3s ease;
+        }
+
+        /* 0.5s Test Audit Overlay */
+        body.audit-mode .experiment-img {
+            filter: grayscale(100%) blur(5px);
+        }
+
+        .experiment-details {
+            font-size: 0.85rem;
+            position: relative;
+        }
+
+        .experiment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 0.75rem;
+            margin-bottom: 0.25rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+
+        .log-label {
+            color: var(--text-color);
+            font-weight: bold;
+            display: block;
+            text-transform: uppercase;
+        }
+
+        /* Modal styling */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(44, 42, 41, 0.8);
+            backdrop-filter: blur(2px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-color);
+            border: 3px solid var(--text-color);
+            padding: 2rem;
+            width: 80%;
+            max-width: 800px;
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 8px 8px 0 var(--text-color);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid var(--text-color);
+            padding-bottom: 1rem;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            border: none;
+            padding: 0;
+            font-size: 2.5rem;
+        }
+
+        textarea {
+            width: 100%;
+            flex-grow: 1;
+            background: var(--panel-bg);
+            color: var(--text-color);
+            border: 2px solid var(--border-color);
+            padding: 1rem;
+            font-family: var(--font-body);
+            resize: none;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--text-color);
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        /* Quick Links Nav */
+        .quick-links {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+            border-top: 1px solid var(--border-color);
+            padding-top: 1rem;
+        }
+
+        .quick-links a {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="layout-wrapper">
+        <!-- Sidebar Navigation & HUD -->
+        <aside class="sidebar">
+            <h1 class="site-title">Kinetic Narratives</h1>
+
+            <section class="mission-brief">
+                <h2>Project Focus</h2>
+                <div id="render-focus" class="content">Loading...</div>
+
+                <h2>Primary Question</h2>
+                <div id="render-question" class="content" style="color: #666;">Loading...</div>
+            </section>
+
+            <div class="hud-controls">
+                <button id="audit-toggle">⚲ Optic Audit: Off</button>
+                <button id="sys-data-btn" class="btn-active">⚙ Edit Archive [JSON]</button>
+            </div>
+
+            <nav class="quick-links">
+                <a href="#" target="_blank">Milanote</a>
+                <a href="#" target="_blank">GitHub</a>
+                <a href="#" target="_blank">Figma</a>
+            </nav>
+        </aside>
+
+        <!-- Main Content Feed -->
+        <main class="main-feed">
+            <section>
+                <div class="section-header">
+                    <h2 class="section-title">The Master Plan</h2>
+                    <div class="velocity-container">
+                        <div id="velocity-bar" class="velocity-fill"></div>
+                        <span id="velocity-label" class="velocity-label">0% Verified (0/0)</span>
+                    </div>
+                </div>
+                <div class="card" id="render-plan">
+                    <!-- Injected via JS -->
+                </div>
+            </section>
+
+            <section>
+                <h2 class="section-title">Reading Library</h2>
+                <div class="card">
+                    <ul id="render-library" class="library-list">
+                        <!-- Injected via JS -->
+                    </ul>
+                </div>
+            </section>
+
+            <section>
+                <h2 class="section-title">Prompt Log</h2>
+                <div class="card" id="render-prompts">
+                    <!-- Injected via JS -->
+                </div>
+            </section>
+
+            <section>
+                <h2 class="section-title">Experiment Log</h2>
+                <div id="render-experiments" class="experiment-grid">
+                    <!-- Injected via JS -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- JSON Editor Modal -->
+    <div id="data-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>System Archive Override</h2>
+                <button id="close-modal">Close</button>
+            </div>
+            <textarea id="json-editor" spellcheck="false"></textarea>
+            <div class="modal-actions">
+                <span id="save-status" style="color: var(--accent-orange); font-style: italic; display: none;">Archive
+                    Updated</span>
+                <button id="save-data" class="btn-active">Commit to Ledger</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- INITIAL STATE ---
+        const defaultData = {
+            mission: {
+                focus: "Investigating the friction points between rapid LLM prototyping and long-term maintainability in UI development.",
+                question: "How can we compress the UI creation loop without sacrificing structural integrity?"
+            },
+            plan: [
+                { week: "W1", title: "Foundation & Scaffold", success: "Core architecture defined, initial prototype live." },
+                { week: "W2", title: "Component Maturation", success: "Design system implemented, routing structured." },
+                { week: "W3", title: "Data Plumbing", success: "State management solid, API mocks replaced." },
+                { week: "W4", title: "Performance Tuning", success: "Lighthouse scores >90, animation jank resolved." },
+                { week: "W5", title: "Review & Polish", success: "Final audit complete, documentation written." }
+            ],
+            library: [
+                { title: "The Pragmatic Programmer", link: "https://example.com", takeaway: "Don't repeat yourself (DRY) principles still apply to AI generation.", status: "VERIFIED" },
+                { title: "Refactoring UI", link: "https://example.com", takeaway: "Design with data in mind, not just shapes.", status: "IN-AUDIT" }
+            ],
+            prompts: [
+                { prompt: "Build a responsive grid...", model: "GPT-4o", shift: "Realized CSS Grid handles the constraints better than Flexbox here." },
+                { prompt: "Optimize this React hook...", model: "Claude 3.5", shift: "Moved computation to server-side to save client cycles." }
+            ],
+            experiments: [
+                { url: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=500&q=60", input: "Initial Dashboard Layout", pruning: "Too much visual noise.", action: "Simplify borders, align to 8px grid.", status: "BACKLOG" },
+                { url: "https://images.unsplash.com/photo-1555949963-aa79dcee981c?auto=format&fit=crop&w=500&q=60", input: "Data Visualization Component", pruning: "Colors lacking contrast.", action: "Switch to high-contrast palette.", status: "VERIFIED" }
+            ]
+        };
+
+        const STORAGE_KEY = 'kineticData';
+        let draggedNodeInfo = null; // { category, index }
+
+        function loadData() {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (stored) {
+                try {
+                    return JSON.parse(stored);
+                } catch (e) {
+                    console.error("Failed to parse localStorage data, falling back to default.", e);
+                    return defaultData;
+                }
+            }
+            return defaultData;
+        }
+
+        function saveData(dataObj) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(dataObj));
+            renderDashboard(dataObj);
+        }
+
+        // Status Logic
+        const statusFlow = ['BACKLOG', 'IN-AUDIT', 'VERIFIED'];
+
+        function getStatusClass(statusStr) {
+            if (!statusStr) return 'status-backlog';
+            const s = statusStr.toUpperCase();
+            if (s === 'VERIFIED') return 'status-verified';
+            if (s === 'IN-AUDIT') return 'status-in-audit';
+            return 'status-backlog';
+        }
+
+        function toggleStatus(category, index) {
+            const data = loadData();
+            const currentStatus = data[category][index].status || 'BACKLOG';
+            let nextIndex = statusFlow.indexOf(currentStatus.toUpperCase()) + 1;
+            if (nextIndex >= statusFlow.length) nextIndex = 0;
+
+            data[category][index].status = statusFlow[nextIndex];
+            saveData(data);
+        }
+
+        function updateVelocity(data) {
+            let totalTasks = 0;
+            let verifiedTasks = 0;
+
+            // Track standard items with statuses as 'tasks'
+            const combinator = [
+                ...(data.library || []),
+                ...(data.experiments || [])
+            ];
+
+            combinator.forEach(item => {
+                if (item.status) {
+                    totalTasks++;
+                    if (item.status.toUpperCase() === 'VERIFIED') {
+                        verifiedTasks++;
+                    }
+                }
+            });
+
+            // Avoid div by zero
+            if (totalTasks === 0) totalTasks = 1;
+
+            const pct = Math.round((verifiedTasks / totalTasks) * 100);
+            document.getElementById('velocity-bar').style.width = pct + '%';
+            document.getElementById('velocity-label').textContent = `${pct}% Verified (${verifiedTasks}/${totalTasks})`;
+        }
+
+        // --- DRAG AND DROP HANDLERS ---
+        function handleDragStart(e, category, index) {
+            draggedNodeInfo = { category, index };
+            e.dataTransfer.effectAllowed = 'move';
+            // Slight delay so the ghost rendering catches the element before class is applied
+            setTimeout(() => {
+                e.target.classList.add('kinetic-ghost');
+            }, 0);
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault(); // Necessary to allow dropping
+            const listContainer = e.currentTarget;
+            e.dataTransfer.dropEffect = 'move';
+
+            // Highlight the drop target based on mouse position relative to center of element
+            const items = [...listContainer.querySelectorAll('.draggable:not(.kinetic-ghost)')];
+            const mouseY = e.clientY;
+
+            items.forEach(item => item.classList.remove('drag-over'));
+
+            const dropTarget = getDragAfterElement(listContainer, mouseY);
+            if (dropTarget) {
+                dropTarget.classList.add('drag-over');
+            }
+        }
+
+        function handleDragLeave(e) {
+            const listContainer = e.currentTarget;
+            const items = [...listContainer.querySelectorAll('.draggable')];
+            items.forEach(item => item.classList.remove('drag-over'));
+        }
+
+        function handleDragEnd(e) {
+            e.target.classList.remove('kinetic-ghost');
+            // Cleanup any remaining visual indicators
+            document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+            draggedNodeInfo = null;
+        }
+
+        function handleDrop(e, category) {
+            e.stopPropagation();
+            e.preventDefault();
+
+            const listContainer = e.currentTarget;
+            document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+
+            if (!draggedNodeInfo || draggedNodeInfo.category !== category) return; // Prevent cross-category drops for now
+
+            const droppedElementIndex = draggedNodeInfo.index;
+            const dropTarget = getDragAfterElement(listContainer, e.clientY);
+
+            let data = loadData();
+            const sourceArray = data[category];
+            const draggedItem = sourceArray.splice(droppedElementIndex, 1)[0];
+
+            // If dropTarget exists, insert before it. Else append to end.
+            if (dropTarget) {
+                const targetIndex = parseInt(dropTarget.getAttribute('data-index'), 10);
+                // Adjust index if we drag top to bottom vs bottom to top to ensure accurate placement
+                const offsetTarget = (droppedElementIndex < targetIndex) ? targetIndex - 1 : targetIndex;
+                sourceArray.splice(offsetTarget, 0, draggedItem);
+            } else {
+                sourceArray.push(draggedItem);
+            }
+
+            saveData(data);
+        }
+
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.draggable:not(.kinetic-ghost)')];
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+
+        // --- RENDER LOGIC ---
+        function renderDashboard(data) {
+            // Mission
+            document.getElementById('render-focus').textContent = data.mission?.focus || "N/A";
+            document.getElementById('render-question').textContent = data.mission?.question || "N/A";
+
+            // Plan
+            const planContainer = document.getElementById('render-plan');
+            planContainer.innerHTML = '';
+            (data.plan || []).forEach((w, i) => {
+                const el = document.createElement('div');
+                el.className = 'plan-item draggable';
+                el.draggable = true;
+                el.setAttribute('data-index', i);
+                el.innerHTML = `
+                    <div class="week-num"><span class="drag-handle">≡</span>${w.week}</div>
+                    <div class="plan-content">
+                        <strong>${w.title}</strong>
+                        <div class="success-indicator">${w.success}</div>
+                    </div>
+                `;
+                el.addEventListener('dragstart', (e) => handleDragStart(e, 'plan', i));
+                el.addEventListener('dragend', handleDragEnd);
+                planContainer.appendChild(el);
+            });
+            // Attach drop listeners to container
+            planContainer.addEventListener('dragover', handleDragOver);
+            planContainer.addEventListener('dragleave', handleDragLeave);
+            planContainer.addEventListener('drop', (e) => handleDrop(e, 'plan'));
+
+            // Library
+            const libContainer = document.getElementById('render-library');
+            libContainer.innerHTML = '';
+            (data.library || []).forEach((item, i) => {
+                const statusStr = item.status || 'BACKLOG';
+                libContainer.innerHTML += `
+                    <li class="library-item">
+                        <div>
+                            <strong><a href="${item.link}" target="_blank">${item.title}</a></strong>
+                            <div style="margin-top: 0.5rem; color: #555;">${item.takeaway}</div>
+                        </div>
+                        <div class="library-meta">
+                            <span class="status-pill ${getStatusClass(statusStr)}" onclick="toggleStatus('library', ${i})">${statusStr}</span>
+                        </div>
+                    </li>
+                `;
+            });
+
+            // Prompts
+            const promptContainer = document.getElementById('render-prompts');
+            promptContainer.innerHTML = '';
+            (data.prompts || []).forEach(p => {
+                promptContainer.innerHTML += `
+                    <div class="prompt-entry">
+                        <span class="prompt-meta">${p.model}</span>
+                        <div class="prompt-text">"${p.prompt}"</div>
+                        <div class="prompt-shift">↳ ${p.shift}</div>
+                    </div>
+                `;
+            });
+
+            // Experiments
+            const expContainer = document.getElementById('render-experiments');
+            expContainer.innerHTML = '';
+            (data.experiments || []).forEach((e, i) => {
+                const statusStr = e.status || 'BACKLOG';
+                const el = document.createElement('div');
+                el.className = 'experiment-card draggable';
+                el.draggable = true;
+                el.setAttribute('data-index', i);
+                el.innerHTML = `
+                    <div class="experiment-img-container">
+                        <img src="${e.url}" alt="Experiment" class="experiment-img" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'100%\\' height=\\'100%\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%23ECE8DE\\'/><text x=\\'50%\\' y=\\'50%' fill=\\'black\\' text-anchor=\\'middle\\' font-family=\\'Special Elite\\' alignment-baseline=\\'middle\\'>Image Missing</text></svg>'">
+                    </div>
+                    <div class="experiment-details">
+                        <div class="experiment-header">
+                            <span class="log-label" style="font-size: 0.75rem; margin:0; border:none; display:flex; align-items:center; gap:0.5rem;">
+                              <span class="drag-handle">≡</span> Input
+                            </span>
+                            <span class="status-pill ${getStatusClass(statusStr)}" onclick="toggleStatus('experiments', ${i})">${statusStr}</span>
+                        </div>
+                        ${e.input}
+                        <span class="log-label" style="margin-top:0.75rem;">Pruning Observation</span>
+                        ${e.pruning}
+                        <span class="log-label" style="margin-top:0.75rem;">Next Action</span>
+                        ${e.action}
+                    </div>
+                `;
+                el.addEventListener('dragstart', (evt) => handleDragStart(evt, 'experiments', i));
+                el.addEventListener('dragend', handleDragEnd);
+                expContainer.appendChild(el);
+            });
+            expContainer.addEventListener('dragover', handleDragOver);
+            expContainer.addEventListener('dragleave', handleDragLeave);
+            expContainer.addEventListener('drop', (e) => handleDrop(e, 'experiments'));
+
+            // Update Velocity
+            updateVelocity(data);
+        }
+
+        // --- EVENT LISTENERS ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initial Render
+            const appData = loadData();
+            renderDashboard(appData);
+
+            // Audit Toggle
+            const auditBtn = document.getElementById('audit-toggle');
+            auditBtn.addEventListener('click', () => {
+                const isActive = document.body.classList.toggle('audit-mode');
+                auditBtn.textContent = isActive ? '⚲ Optic Audit: Active' : '⚲ Optic Audit: Off';
+                if (isActive) {
+                    auditBtn.classList.add('btn-active');
+                } else {
+                    auditBtn.classList.remove('btn-active');
+                }
+            });
+
+            // Modal Logic
+            const modal = document.getElementById('data-modal');
+            const editor = document.getElementById('json-editor');
+
+            document.getElementById('sys-data-btn').addEventListener('click', () => {
+                editor.value = JSON.stringify(loadData(), null, 2);
+                modal.classList.add('active');
+            });
+
+            document.getElementById('close-modal').addEventListener('click', () => {
+                modal.classList.remove('active');
+                document.getElementById('save-status').style.display = 'none';
+            });
+
+            document.getElementById('save-data').addEventListener('click', () => {
+                try {
+                    const parsed = JSON.parse(editor.value);
+                    saveData(parsed);
+                    const status = document.getElementById('save-status');
+                    status.style.display = 'inline';
+                    setTimeout(() => status.style.display = 'none', 2000);
+                } catch (err) {
+                    alert("JSON Parse Error: " + err.message);
+                }
+            });
+
+            // Close modal on click outside
+            window.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        });
+
+    </script>
+</body>
+
+</html>
